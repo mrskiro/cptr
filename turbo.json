@@ -8,7 +8,7 @@
     "build": {
       "outputs": [".output/**"]
     },
-    "lint": {},
-    "typecheck": {}
+    "check-types": {},
+    "lint": {}
   }
 }
