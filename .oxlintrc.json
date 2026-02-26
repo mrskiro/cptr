@@ -1,0 +1,8 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "unicorn", "oxc", "import", "jsx-a11y", "vitest"],
+  "rules": {
+    "oxc/no-barrel-file": ["error", { "threshold": 1 }],
+    "vitest/consistent-test-it": ["error", { "fn": "it", "withinDescribe": "it" }]
+  }
+}

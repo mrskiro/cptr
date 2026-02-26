@@ -1,0 +1,17 @@
+{
+  "name": "cptr",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "lint": "oxlint --deny-warnings",
+    "lint:fix": "oxlint --fix --fix-suggestions --fix-dangerously && pnpm format"
+  },
+  "devDependencies": {
+    "oxfmt": "0.35.0",
+    "oxlint": "1.50.0",
+    "turbo": "^2.8.11"
+  }
+}
