@@ -15,6 +15,11 @@ stats-*.json
 .wxt
 web-ext.config.ts
 
+# Xcode
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
