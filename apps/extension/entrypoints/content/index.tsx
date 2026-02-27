@@ -1,4 +1,5 @@
 /** @jsxImportSource preact */
+import { Copy, Download, RefreshCw } from "lucide-preact";
 import { render } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -65,7 +66,7 @@ const cropToBlob = async (rect: DOMRect, dataUrl: string) => {
     0,
     0,
     rect.width * dpr,
-    rect.height * dpr
+    rect.height * dpr,
   );
 
   return new Promise<Blob>((r) => canvas.toBlob((b) => r(b!), "image/png"));
@@ -82,39 +83,6 @@ const toPaddedRect = (r: DOMRect) =>
   new DOMRect(r.x - PAD, r.y - PAD, r.width + PAD * 2, r.height + PAD * 2);
 
 // --- Preact components ---
-
-const CopyIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  >
-    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-  </svg>
-);
-
-const SaveIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  >
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-    <polyline points="7 10 12 15 17 10" />
-    <line x1="12" y1="15" x2="12" y2="3" />
-  </svg>
-);
 
 const MenuButton = ({
   icon,
@@ -150,7 +118,7 @@ const App = ({ onClose }: { onClose: () => void }) => {
     };
   }, []);
 
-  useEffect(() => {
+  const startListening = () => {
     const controller = new AbortController();
     const { signal } = controller;
 
@@ -162,7 +130,7 @@ const App = ({ onClose }: { onClose: () => void }) => {
         currentTargetRef.current = target;
         setHighlightRect(toPaddedRect(target.getBoundingClientRect()));
       },
-      { capture: true, signal }
+      { capture: true, signal },
     );
 
     document.addEventListener(
@@ -175,15 +143,23 @@ const App = ({ onClose }: { onClose: () => void }) => {
         capturedOriginalRectRef.current = r;
 
         playCaptureSound();
+        controller.abort();
         browser.runtime.sendMessage({ type: "capture" }).then((response) => {
-          if (response.error) return;
-          controller.abort();
+          if (response.error) {
+            capturedOriginalRectRef.current = null;
+            return;
+          }
           setCapturedDataUrl(response.dataUrl);
         });
       },
-      { capture: true, signal }
+      { capture: true, signal },
     );
 
+    return controller;
+  };
+
+  useEffect(() => {
+    const controller = startListening();
     return () => controller.abort();
   }, []);
 
@@ -198,10 +174,7 @@ const App = ({ onClose }: { onClose: () => void }) => {
   const handleCopy = async () => {
     if (!capturedOriginalRectRef.current || !capturedDataUrl) return;
 
-    const blob = await cropToBlob(
-      capturedOriginalRectRef.current,
-      capturedDataUrl
-    );
+    const blob = await cropToBlob(capturedOriginalRectRef.current, capturedDataUrl);
     await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
 
     setCopied(true);
@@ -211,17 +184,21 @@ const App = ({ onClose }: { onClose: () => void }) => {
   const handleSave = async () => {
     if (!capturedOriginalRectRef.current || !capturedDataUrl) return;
 
-    const blob = await cropToBlob(
-      capturedOriginalRectRef.current,
-      capturedDataUrl
-    );
+    const blob = await cropToBlob(capturedOriginalRectRef.current, capturedDataUrl);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `cptr-${Date.now()}.png`;
     a.click();
     URL.revokeObjectURL(url);
+  };
 
+  const handleRetake = () => {
+    setCapturedDataUrl(null);
+    setCopied(false);
+    currentTargetRef.current = null;
+    capturedOriginalRectRef.current = null;
+    startListening();
   };
 
   return (
@@ -275,15 +252,12 @@ const App = ({ onClose }: { onClose: () => void }) => {
           }}
         >
           <MenuButton
-            icon={<CopyIcon />}
+            icon={<Copy size={16} />}
             label={copied ? "Copied!" : "Copy"}
             onClick={handleCopy}
           />
-          <MenuButton
-            icon={<SaveIcon />}
-            label="Save"
-            onClick={handleSave}
-          />
+          <MenuButton icon={<Download size={16} />} label="Save" onClick={handleSave} />
+          <MenuButton icon={<RefreshCw size={16} />} label="Retake" onClick={handleRetake} />
         </div>
       )}
     </div>
@@ -302,10 +276,7 @@ export default defineContentScript({
       position: "inline",
       anchor: "body",
       onMount: (container) => {
-        render(
-          <App onClose={() => ui.remove()} />,
-          container
-        );
+        render(<App onClose={() => ui.remove()} />, container);
         return container;
       },
       onRemove: (container) => {
