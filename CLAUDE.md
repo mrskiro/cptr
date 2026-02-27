@@ -1,46 +1,52 @@
 # cptr
 
-Arc風のスクリーンショットツール（OSS）。ホバーでDOM要素を自動検出・ハイライトし、ノード単位でキャプチャ。
+Arc-like screenshot tool (OSS). Hover to auto-detect DOM elements, highlight, and capture per-node.
 
-## コマンド
+## Commands
 
 ```bash
-pnpm dev                       # Turbo経由で全apps起動
-pnpm -F @cptr/extension dev    # 拡張のみ起動
-pnpm build                     # 全appsビルド
-pnpm check-types               # 型チェック
+pnpm dev                       # Start all apps via Turbo
+pnpm -F @cptr/extension dev    # Start extension only
+pnpm build                     # Build all apps
+pnpm check-types               # Type check
 pnpm lint                      # oxlint (--deny-warnings)
 pnpm lint:fix                  # oxlint fix + oxfmt
 pnpm format                    # oxfmt
 pnpm format:check              # oxfmt --check
 ```
 
-## アーキテクチャ
+## Architecture
 
-- monorepo: pnpm workspace + Turbo
-- `apps/extension` — Chrome拡張（WXT + React + Tailwind CSS v4）
+- Monorepo: pnpm workspace + Turbo
+- `apps/extension` — Chrome extension (WXT + Preact + Tailwind CSS v4)
+  - Popup: React 19
+  - Content Script: Preact (lightweight, ~10KB overhead)
 
-## 技術スタック
+## Tech Stack
 
-- WXT 0.20.18（Viteベース Chrome拡張フレームワーク）
-- React 19, TypeScript, Tailwind CSS v4
+- WXT 0.20.18 (Vite-based Chrome extension framework)
+- Preact (content script), React 19 (popup), TypeScript, Tailwind CSS v4
 - oxlint + oxfmt
 - pnpm
 
 ## WXT
 
-- entrypointsは`entrypoints/`配下。ファイル名規約でmanifest.jsonが自動生成される
-- Viteプラグインは`wxt.config.ts`の`vite`オプションで追加
-- manifest設定は`wxt.config.ts`の`manifest`で定義
-- Content Script UIは3方式: Integrated（隔離なし）、Shadow Root（スタイル隔離）、IFrame（完全隔離）
-- Shadow Root UIでは`cssInjectionMode: "ui"`を設定してCSSを隔離する
+- Entrypoints live under `entrypoints/`. File naming conventions auto-generate manifest.json
+- Vite plugins go in `wxt.config.ts` `vite` option
+- Manifest settings go in `wxt.config.ts` `manifest`
+- Content Script UI has 3 modes: Integrated (no isolation), Shadow Root (style isolation), IFrame (full isolation)
+- Shadow Root UI requires `cssInjectionMode: "ui"` to inject CSS into shadow DOM
+- `createShadowRootUi` returns `{ shadowHost, uiContainer, shadow }` — no `wrapper` property
 
-## Content Script開発の注意点
+## Content Script Design
 
-- `document.elementFromPoint()`はオーバーレイ要素も返す（`pointer-events: none`でも）。取得前にオーバーレイをdisplay:noneにして回避
-- オーバーレイくり抜きはSVG path + `fill-rule="evenodd"`で実装（Driver.js/Shepherd.jsと同じ手法）。clip-pathやbox-shadowは非推奨
+- Mount/unmount via `ui.mount()` / `ui.remove()` controls component lifecycle — do not use internal state to toggle visibility
+- Use `useEffect` for DOM event subscribe/unsubscribe — cleanup handles removal on unmount
+- Use `AbortController` with `addEventListener` signal option to group related listeners and abort them together when no longer needed
+- Overlay click-to-close belongs on the JSX element's `onClick`, not in a global document click handler
+- SVG overlay cutout uses `fill-rule="evenodd"` (same technique as Driver.js/Shepherd.js)
 
 ## oxfmt
 
-- v0.35.0で設定名が変更: `experimentalSortImports` → `sortImports`, `experimentalSortPackageJson` → `sortPackageJson`
-- グループ名: `type-import`, `value-builtin`, `value-external`, `type-internal`, `value-internal` 等
+- v0.35.0 renamed settings: `experimentalSortImports` → `sortImports`, `experimentalSortPackageJson` → `sortPackageJson`
+- Group names: `type-import`, `value-builtin`, `value-external`, `type-internal`, `value-internal`, etc.
