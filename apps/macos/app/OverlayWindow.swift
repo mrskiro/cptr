@@ -65,13 +65,14 @@ final class OverlayView: NSView {
             onCancel?()
             return
         }
-        let flipped = CGRect(
-            x: rect.origin.x,
-            y: (window?.screen?.frame.height ?? bounds.height) - rect.origin.y - rect.height,
+        guard let screen = window?.screen else { return }
+        let screenRect = CGRect(
+            x: screen.frame.origin.x + rect.origin.x,
+            y: screen.frame.origin.y + screen.frame.height - rect.origin.y - rect.height,
             width: rect.width,
             height: rect.height
         )
-        onSelection?(flipped)
+        onSelection?(screenRect)
     }
 
     override func keyDown(with event: NSEvent) {
