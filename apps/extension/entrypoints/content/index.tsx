@@ -107,6 +107,7 @@ const App = ({ onClose }: { onClose: () => void }) => {
   const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
   const [capturedDataUrl, setCapturedDataUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const currentTargetRef = useRef<Element | null>(null);
   const capturedOriginalRectRef = useRef<DOMRect | null>(null);
@@ -122,9 +123,39 @@ const App = ({ onClose }: { onClose: () => void }) => {
     const controller = new AbortController();
     const { signal } = controller;
 
+    let dragging = false;
+    let dragStart: { x: number; y: number } | null = null;
+    let holdTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const capture = (rect: DOMRect) => {
+      capturedOriginalRectRef.current = rect;
+      playCaptureSound();
+      controller.abort();
+      browser.runtime.sendMessage({ type: "capture" }).then((response) => {
+        if (response.error) {
+          capturedOriginalRectRef.current = null;
+          return;
+        }
+        setCapturedDataUrl(response.dataUrl);
+      });
+    };
+
+    const toDragRect = (x: number, y: number) =>
+      new DOMRect(
+        Math.min(dragStart!.x, x),
+        Math.min(dragStart!.y, y),
+        Math.abs(x - dragStart!.x),
+        Math.abs(y - dragStart!.y),
+      );
+
     document.addEventListener(
       "mousemove",
       (e: MouseEvent) => {
+        if (dragging && dragStart) {
+          setHighlightRect(toDragRect(e.clientX, e.clientY));
+          return;
+        }
+        if (dragStart) return;
         const target = document.elementFromPoint(e.clientX, e.clientY);
         if (!target || target === currentTargetRef.current) return;
         currentTargetRef.current = target;
@@ -134,23 +165,41 @@ const App = ({ onClose }: { onClose: () => void }) => {
     );
 
     document.addEventListener(
-      "click",
+      "mousedown",
       (e: MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!currentTargetRef.current) return;
-        const r = currentTargetRef.current.getBoundingClientRect();
-        capturedOriginalRectRef.current = r;
+        dragStart = { x: e.clientX, y: e.clientY };
+        holdTimer = setTimeout(() => {
+          dragging = true;
+          setIsDragging(true);
+        }, 200);
+      },
+      { capture: true, signal },
+    );
 
-        playCaptureSound();
-        controller.abort();
-        browser.runtime.sendMessage({ type: "capture" }).then((response) => {
-          if (response.error) {
-            capturedOriginalRectRef.current = null;
-            return;
+    document.addEventListener(
+      "mouseup",
+      (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (holdTimer) {
+          clearTimeout(holdTimer);
+          holdTimer = null;
+        }
+        if (dragging && dragStart) {
+          const rect = toDragRect(e.clientX, e.clientY);
+          if (rect.width > 5 && rect.height > 5) {
+            capture(rect);
           }
-          setCapturedDataUrl(response.dataUrl);
-        });
+          dragging = false;
+          dragStart = null;
+          setIsDragging(false);
+          return;
+        }
+        dragStart = null;
+        if (!currentTargetRef.current) return;
+        capture(currentTargetRef.current.getBoundingClientRect());
       },
       { capture: true, signal },
     );
@@ -196,6 +245,7 @@ const App = ({ onClose }: { onClose: () => void }) => {
   const handleRetake = () => {
     setCapturedDataUrl(null);
     setCopied(false);
+    setIsDragging(false);
     currentTargetRef.current = null;
     capturedOriginalRectRef.current = null;
     startListening();
@@ -211,7 +261,7 @@ const App = ({ onClose }: { onClose: () => void }) => {
         onClick={capturedDataUrl ? onClose : undefined}
       >
         <path
-          class="fill-black/30 transition-[d] duration-100 ease-out"
+          class={`fill-black/30 ${isDragging ? "" : "transition-[d] duration-100 ease-out"}`}
           fill-rule="evenodd"
           style={{ d: `path("${buildOverlayPath(highlightRect)}")` }}
         />
@@ -219,7 +269,7 @@ const App = ({ onClose }: { onClose: () => void }) => {
 
       {highlightRect && (
         <div
-          class="fixed pointer-events-none rounded-md shadow-lg transition-all duration-100 ease-out overflow-hidden"
+          class={`fixed pointer-events-none rounded-md shadow-lg overflow-hidden ${isDragging ? "" : "transition-all duration-100 ease-out"}`}
           style={{
             top: `${highlightRect.top}px`,
             left: `${highlightRect.left}px`,
@@ -235,8 +285,8 @@ const App = ({ onClose }: { onClose: () => void }) => {
               style={{
                 width: `${window.innerWidth}px`,
                 height: `${window.innerHeight}px`,
-                marginTop: `${-capturedOriginalRectRef.current.top + PAD}px`,
-                marginLeft: `${-capturedOriginalRectRef.current.left + PAD}px`,
+                marginTop: `${-highlightRect.top}px`,
+                marginLeft: `${-highlightRect.left}px`,
               }}
             />
           )}
