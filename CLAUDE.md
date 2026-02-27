@@ -37,6 +37,9 @@ pnpm format:check              # oxfmt --check
 - Content Script UI has 3 modes: Integrated (no isolation), Shadow Root (style isolation), IFrame (full isolation)
 - Shadow Root UI requires `cssInjectionMode: "ui"` to inject CSS into shadow DOM
 - `createShadowRootUi` returns `{ shadowHost, uiContainer, shadow }` — no `wrapper` property
+- Non-entrypoint files must NOT be in `entrypoints/` — WXT treats all files there as entry points and requires a default export
+- WxtVitest plugin (`WxtVitest()`) is incompatible with browser mode — use `wxt/testing/fake-browser` directly
+- `/** @jsxImportSource preact */` pragma must stay on line 1 — oxfmt import sorting can reorder it below imports, breaking JSX types
 
 ## Content Script Design
 

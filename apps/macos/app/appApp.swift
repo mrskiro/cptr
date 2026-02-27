@@ -5,6 +5,7 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hotKeyRef: EventHotKeyRef?
     private var overlayWindow: OverlayWindow?
+    private var previewWindow: PreviewWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         registerHotkey()
@@ -26,11 +27,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetApplicationEventTarget(), 0, &hotKeyRef)
     }
 
+    private func showPreview(image: NSImage) {
+        let window = PreviewWindow(image: image)
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        previewWindow = window
+    }
+
     private func showOverlay() {
         overlayWindow?.close()
         let window = OverlayWindow()
-        window.onSelection = { rect in
-            FileHandle.standardError.write(Data("Selected: \(rect)\n".utf8))
+        window.onSelection = { [weak self] rect in
+            Task { @MainActor in
+                do {
+                    let image = try await CaptureService.capture(rect: rect)
+                    self?.showPreview(image: image)
+                } catch {
+                    FileHandle.standardError.write(Data("Capture failed: \(error)\n".utf8))
+                }
+            }
         }
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
