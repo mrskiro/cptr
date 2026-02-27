@@ -4,6 +4,7 @@ import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hotKeyRef: EventHotKeyRef?
+    private var overlayWindow: OverlayWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         registerHotkey()
@@ -11,15 +12,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func registerHotkey() {
         var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
-        InstallEventHandler(GetApplicationEventTarget(), { _, event, _ -> OSStatus in
-            print("Capture mode triggered!")
+        let handler: EventHandlerUPP = { _, _, userData -> OSStatus in
+            let delegate = Unmanaged<AppDelegate>.fromOpaque(userData!).takeUnretainedValue()
+            DispatchQueue.main.async { delegate.showOverlay() }
             return noErr
-        }, 1, &eventType, nil, nil)
+        }
+        let selfPtr = Unmanaged.passUnretained(self).toOpaque()
+        InstallEventHandler(GetApplicationEventTarget(), handler, 1, &eventType, selfPtr, nil)
 
         let hotKeyID = EventHotKeyID(signature: OSType(0x63707472), id: 1)
         let modifiers = UInt32(cmdKey | shiftKey)
         let keyCode: UInt32 = 0x13 // '2' key
         RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetApplicationEventTarget(), 0, &hotKeyRef)
+    }
+
+    private func showOverlay() {
+        overlayWindow?.close()
+        let window = OverlayWindow()
+        window.onSelection = { rect in
+            FileHandle.standardError.write(Data("Selected: \(rect)\n".utf8))
+        }
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        overlayWindow = window
     }
 }
 
