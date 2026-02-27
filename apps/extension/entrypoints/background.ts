@@ -7,4 +7,15 @@ export default defineBackground(() => {
 
     browser.tabs.sendMessage(tab.id, { type: "toggle-capture" });
   });
+
+  browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message.type !== "capture") return;
+
+    browser.tabs
+      .captureVisibleTab({ format: "png" })
+      .then((dataUrl) => sendResponse({ dataUrl }))
+      .catch((err) => sendResponse({ error: String(err) }));
+
+    return true; // 非同期レスポンスのために必要
+  });
 });

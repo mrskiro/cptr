@@ -5,6 +5,7 @@ export default defineConfig({
   modules: ["@wxt-dev/module-react"],
   manifest: {
     name: "cptr",
+    permissions: ["activeTab", "clipboardWrite"],
     commands: {
       "toggle-capture": {
         suggested_key: {
