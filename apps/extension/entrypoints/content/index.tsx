@@ -156,7 +156,9 @@ const App = ({ onClose }: { onClose: () => void }) => {
           return;
         }
         if (dragStart) return;
-        const target = document.elementFromPoint(e.clientX, e.clientY);
+        const target = document
+          .elementsFromPoint(e.clientX, e.clientY)
+          .find((el) => el.localName !== "cptr-overlay");
         if (!target || target === currentTargetRef.current) return;
         currentTargetRef.current = target;
         setHighlightRect(toPaddedRect(target.getBoundingClientRect()));
@@ -257,7 +259,7 @@ const App = ({ onClose }: { onClose: () => void }) => {
       <svg
         width="100%"
         height="100%"
-        class={`fixed inset-0 opacity-100 transition-opacity duration-150 ease-out ${capturedDataUrl ? "pointer-events-auto cursor-default" : ""}`}
+        class={`fixed inset-0 pointer-events-auto opacity-100 transition-opacity duration-150 ease-out ${capturedDataUrl ? "cursor-default" : ""}`}
         onClick={capturedDataUrl ? onClose : undefined}
       >
         <path
