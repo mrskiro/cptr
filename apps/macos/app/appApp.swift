@@ -3,8 +3,11 @@ import SwiftUI
 @main
 struct appApp: App {
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        MenuBarExtra("cptr", systemImage: "camera.viewfinder") {
+            Button("Quit") {
+                NSApplication.shared.terminate(nil)
+            }
+            .keyboardShortcut("q")
         }
     }
 }
