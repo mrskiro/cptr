@@ -3,6 +3,18 @@ import { defineConfig } from "wxt";
 
 export default defineConfig({
   modules: ["@wxt-dev/module-react"],
+  manifest: {
+    name: "cptr",
+    commands: {
+      "toggle-capture": {
+        suggested_key: {
+          default: "Ctrl+Shift+S",
+          mac: "Command+Shift+S",
+        },
+        description: "Toggle capture mode",
+      },
+    },
+  },
   vite: () => ({
     plugins: [tailwindcss()],
   }),
