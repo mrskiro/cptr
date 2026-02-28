@@ -18,7 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             DispatchQueue.main.async { delegate.showOverlay() }
             return noErr
         }
-        let selfPtr = Unmanaged.passUnretained(self).toOpaque()
+        let selfPtr = Unmanaged.passRetained(self).toOpaque()
         InstallEventHandler(GetApplicationEventTarget(), handler, 1, &eventType, selfPtr, nil)
 
         let hotKeyID = EventHotKeyID(signature: OSType(0x63707472), id: 1)
@@ -36,6 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showOverlay() {
         overlayWindow?.close()
+        overlayWindow = nil
         let window = OverlayWindow()
         window.onSelection = { [weak self] rect in
             Task { @MainActor in

@@ -21,8 +21,9 @@ enum CaptureService {
             width: rect.width,
             height: rect.height
         )
-        config.width = Int(rect.width * NSScreen.main!.backingScaleFactor)
-        config.height = Int(rect.height * NSScreen.main!.backingScaleFactor)
+        let scale = NSScreen.screens.first(where: { $0.frame.contains(rect) })?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2.0
+        config.width = Int(rect.width * scale)
+        config.height = Int(rect.height * scale)
         config.showsCursor = false
 
         let cgImage = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
