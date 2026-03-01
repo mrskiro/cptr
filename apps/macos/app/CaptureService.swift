@@ -5,32 +5,35 @@ enum CaptureService {
     static func capture(rect: CGRect) async throws -> NSImage {
         let content = try await SCShareableContent.current
         guard let display = content.displays.first(where: { display in
-            CGRect(x: CGFloat(display.frame.origin.x),
-                   y: CGFloat(display.frame.origin.y),
-                   width: CGFloat(display.width),
-                   height: CGFloat(display.height)).contains(rect)
+            display.frame.intersects(rect)
         }) ?? content.displays.first else {
             throw CaptureError.noDisplay
         }
 
         let filter = SCContentFilter(display: display, excludingWindows: [])
         let config = SCStreamConfiguration()
-        config.sourceRect = CGRect(
-            x: rect.origin.x - display.frame.origin.x,
-            y: rect.origin.y - display.frame.origin.y,
-            width: rect.width,
-            height: rect.height
-        )
-        let scale = NSScreen.screens.first(where: { $0.frame.contains(rect) })?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2.0
-        config.width = Int(rect.width * scale)
-        config.height = Int(rect.height * scale)
+        config.width = display.width
+        config.height = display.height
         config.showsCursor = false
 
-        let cgImage = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
-        return NSImage(cgImage: cgImage, size: NSSize(width: rect.width, height: rect.height))
+        let fullImage = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
+
+        let displayScale = CGFloat(display.width) / display.frame.width
+        let cropRect = CGRect(
+            x: (rect.origin.x - display.frame.origin.x) * displayScale,
+            y: (rect.origin.y - display.frame.origin.y) * displayScale,
+            width: rect.width * displayScale,
+            height: rect.height * displayScale
+        )
+
+        guard let cropped = fullImage.cropping(to: cropRect) else {
+            throw CaptureError.captureFailed
+        }
+        return NSImage(cgImage: cropped, size: NSSize(width: rect.width, height: rect.height))
     }
 
     enum CaptureError: Error {
         case noDisplay
+        case captureFailed
     }
 }

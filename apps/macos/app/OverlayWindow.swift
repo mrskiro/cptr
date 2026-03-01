@@ -1,12 +1,13 @@
 import AppKit
 
 final class OverlayWindow: NSWindow {
-    var onSelection: ((CGRect) -> Void)?
+    var onSelection: ((CGRect, NSPoint) -> Void)?
 
     init() {
-        guard let screen = NSScreen.main else {
-            super.init(contentRect: .zero, styleMask: .borderless, backing: .buffered, defer: false)
-            return
+        let mouseLocation = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first(where: { $0.frame.contains(mouseLocation) }) ?? NSScreen.main
+        guard let screen else {
+            fatalError("No screen available")
         }
         super.init(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
         level = .screenSaver
@@ -18,11 +19,13 @@ final class OverlayWindow: NSWindow {
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
         let overlayView = OverlayView()
-        overlayView.onSelection = { [weak self] rect in
-            self?.onSelection?(rect)
+        overlayView.onSelection = { [weak self] rect, endpoint in
+            NSCursor.arrow.set()
+            self?.onSelection?(rect, endpoint)
             self?.close()
         }
         overlayView.onCancel = { [weak self] in
+            NSCursor.arrow.set()
             self?.close()
         }
         contentView = overlayView
@@ -32,7 +35,7 @@ final class OverlayWindow: NSWindow {
 }
 
 final class OverlayView: NSView {
-    var onSelection: ((CGRect) -> Void)?
+    var onSelection: ((CGRect, NSPoint) -> Void)?
     var onCancel: (() -> Void)?
 
     private var dragOrigin: NSPoint?
@@ -67,13 +70,18 @@ final class OverlayView: NSView {
             return
         }
         guard let screen = window?.screen else { return }
+        let current = convert(event.locationInWindow, from: nil)
         let screenRect = CGRect(
             x: screen.frame.origin.x + rect.origin.x,
             y: screen.frame.origin.y + screen.frame.height - rect.origin.y - rect.height,
             width: rect.width,
             height: rect.height
         )
-        onSelection?(screenRect)
+        let endpoint = NSPoint(
+            x: screen.frame.origin.x + current.x,
+            y: screen.frame.origin.y + current.y
+        )
+        onSelection?(screenRect, endpoint)
     }
 
     override func keyDown(with event: NSEvent) {
@@ -84,7 +92,7 @@ final class OverlayView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         guard let rect = currentRect else { return }
-        NSColor.white.withAlphaComponent(0.2).setFill()
+        NSColor.black.withAlphaComponent(0.2).setFill()
         NSBezierPath(rect: rect).fill()
         NSColor.white.withAlphaComponent(0.8).setStroke()
         let border = NSBezierPath(rect: rect)

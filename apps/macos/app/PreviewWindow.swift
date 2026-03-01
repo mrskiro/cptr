@@ -10,20 +10,34 @@ final class PreviewWindow: NSWindow {
         self.image = image
         self.annotationView = AnnotationView(image: image)
 
-        let size = image.size
+        let maxWidth: CGFloat = 320
+        let maxHeight: CGFloat = 220
+        let scale = min(1.0, min(maxWidth / image.size.width, maxHeight / image.size.height))
+        let previewWidth = image.size.width * scale
+        let previewHeight = image.size.height * scale
+        let padding: CGFloat = 12
         let toolbarHeight: CGFloat = 40
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: size.width, height: size.height + toolbarHeight),
+            contentRect: NSRect(x: 0, y: 0, width: previewWidth + padding * 2, height: previewHeight + padding * 2 + toolbarHeight),
             styleMask: [.titled, .closable, .resizable],
             backing: .buffered,
             defer: false
         )
         title = "cptr"
         isReleasedWhenClosed = false
-        center()
+
+        let imageContainer = NSView()
+        annotationView.translatesAutoresizingMaskIntoConstraints = false
+        imageContainer.addSubview(annotationView)
+        NSLayoutConstraint.activate([
+            annotationView.topAnchor.constraint(equalTo: imageContainer.topAnchor, constant: padding),
+            annotationView.bottomAnchor.constraint(equalTo: imageContainer.bottomAnchor, constant: -padding),
+            annotationView.leadingAnchor.constraint(equalTo: imageContainer.leadingAnchor, constant: padding),
+            annotationView.trailingAnchor.constraint(equalTo: imageContainer.trailingAnchor, constant: -padding),
+        ])
 
         let toolbar = makeToolbar()
-        let container = NSStackView(views: [annotationView, toolbar])
+        let container = NSStackView(views: [imageContainer, toolbar])
         container.orientation = .vertical
         container.spacing = 0
         contentView = container
@@ -182,5 +196,6 @@ final class PreviewWindow: NSWindow {
         let pb = NSPasteboard.general
         pb.clearContents()
         pb.writeObjects([rendered])
+        close()
     }
 }

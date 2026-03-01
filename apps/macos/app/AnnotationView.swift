@@ -41,6 +41,12 @@ struct Annotation {
     }
 }
 
+private enum DragMode {
+    case move(origin: NSPoint)
+    case resizeStart
+    case resizeEnd
+}
+
 final class AnnotationView: NSView {
     var currentTool: AnnotationTool = .arrow
     var currentColor: NSColor = .red
@@ -51,7 +57,8 @@ final class AnnotationView: NSView {
     private var activeAnnotation: Annotation?
     private var activeTextField: NSTextField?
     private(set) var selectedIndex: Int?
-    private var dragOffset: NSPoint?
+    private var dragMode: DragMode?
+    private let handleSize: CGFloat = 8
 
     init(image: NSImage) {
         self.image = image
@@ -66,6 +73,8 @@ final class AnnotationView: NSView {
     override var acceptsFirstResponder: Bool { true }
 
     override func draw(_ dirtyRect: NSRect) {
+        let clipPath = NSBezierPath(roundedRect: bounds, xRadius: 8, yRadius: 8)
+        clipPath.addClip()
         image.draw(in: bounds)
         for (i, annotation) in annotations.enumerated() {
             drawAnnotation(annotation)
@@ -79,26 +88,32 @@ final class AnnotationView: NSView {
     }
 
     private func drawSelectionIndicator(_ annotation: Annotation) {
-        let rect: NSRect
-        switch annotation.tool {
-        case .arrow:
-            rect = NSRect(
-                x: min(annotation.start.x, annotation.end.x),
-                y: min(annotation.start.y, annotation.end.y),
-                width: abs(annotation.end.x - annotation.start.x),
-                height: abs(annotation.end.y - annotation.start.y)
-            )
-        case .rect:
-            rect = rectFromPoints(annotation.start, annotation.end)
-        case .text:
-            rect = NSRect(x: annotation.start.x, y: annotation.start.y, width: 200, height: 24)
+        guard annotation.tool != .text else {
+            let rect = NSRect(x: annotation.start.x, y: annotation.start.y, width: 200, height: 24)
+            let path = NSBezierPath(rect: rect.insetBy(dx: -4, dy: -4))
+            path.lineWidth = 1
+            NSColor.controlAccentColor.withAlphaComponent(0.5).setStroke()
+            let pattern: [CGFloat] = [4, 4]
+            path.setLineDash(pattern, count: 2, phase: 0)
+            path.stroke()
+            return
         }
-        let path = NSBezierPath(rect: rect.insetBy(dx: -4, dy: -4))
-        path.lineWidth = 1
-        NSColor.controlAccentColor.withAlphaComponent(0.5).setStroke()
-        let pattern: [CGFloat] = [4, 4]
-        path.setLineDash(pattern, count: 2, phase: 0)
+        drawHandle(at: annotation.start)
+        drawHandle(at: annotation.end)
+    }
+
+    private func drawHandle(at point: NSPoint) {
+        let rect = NSRect(x: point.x - handleSize / 2, y: point.y - handleSize / 2, width: handleSize, height: handleSize)
+        NSColor.white.setFill()
+        NSBezierPath(ovalIn: rect).fill()
+        NSColor.controlAccentColor.setStroke()
+        let path = NSBezierPath(ovalIn: rect)
+        path.lineWidth = 1.5
         path.stroke()
+    }
+
+    private func handleHitTest(_ point: NSPoint, handle: NSPoint) -> Bool {
+        hypot(point.x - handle.x, point.y - handle.y) < handleSize
     }
 
     private func drawAnnotation(_ annotation: Annotation) {
@@ -170,17 +185,31 @@ final class AnnotationView: NSView {
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
 
+        // Check resize handles on selected annotation first
+        if let i = selectedIndex, annotations[i].tool != .text {
+            if handleHitTest(point, handle: annotations[i].start) {
+                dragMode = .resizeStart
+                needsDisplay = true
+                return
+            }
+            if handleHitTest(point, handle: annotations[i].end) {
+                dragMode = .resizeEnd
+                needsDisplay = true
+                return
+            }
+        }
+
         // Hit test existing annotations (reverse order = topmost first)
         for i in annotations.indices.reversed() {
             if annotations[i].hitTest(point) {
                 selectedIndex = i
-                dragOffset = point
+                dragMode = .move(origin: point)
                 needsDisplay = true
                 return
             }
         }
         selectedIndex = nil
-        dragOffset = nil
+        dragMode = nil
 
         if currentTool == .text {
             commitTextField()
@@ -207,14 +236,21 @@ final class AnnotationView: NSView {
     override func mouseDragged(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
 
-        if let i = selectedIndex, let origin = dragOffset {
-            let dx = point.x - origin.x
-            let dy = point.y - origin.y
-            annotations[i].start.x += dx
-            annotations[i].start.y += dy
-            annotations[i].end.x += dx
-            annotations[i].end.y += dy
-            dragOffset = point
+        if let i = selectedIndex, let mode = dragMode {
+            switch mode {
+            case .move(let origin):
+                let dx = point.x - origin.x
+                let dy = point.y - origin.y
+                annotations[i].start.x += dx
+                annotations[i].start.y += dy
+                annotations[i].end.x += dx
+                annotations[i].end.y += dy
+                dragMode = .move(origin: point)
+            case .resizeStart:
+                annotations[i].start = point
+            case .resizeEnd:
+                annotations[i].end = point
+            }
             needsDisplay = true
             return
         }
@@ -226,7 +262,8 @@ final class AnnotationView: NSView {
 
     override func mouseUp(with event: NSEvent) {
         if selectedIndex != nil {
-            dragOffset = nil
+            dragMode = nil
+            needsDisplay = true
             return
         }
         guard var annotation = activeAnnotation else { return }
@@ -255,6 +292,22 @@ final class AnnotationView: NSView {
         needsDisplay = true
     }
 
+    override func keyDown(with event: NSEvent) {
+        // Delete or Backspace
+        if event.keyCode == 51 || event.keyCode == 117 {
+            deleteSelected()
+            return
+        }
+        super.keyDown(with: event)
+    }
+
+    func deleteSelected() {
+        guard let i = selectedIndex else { return }
+        annotations.remove(at: i)
+        selectedIndex = nil
+        needsDisplay = true
+    }
+
     func updateSelectedColor(_ color: NSColor) {
         guard let i = selectedIndex else { return }
         annotations[i].color = color
@@ -278,10 +331,17 @@ final class AnnotationView: NSView {
         }
 
         for annotation in annotations {
+            var start = flipY(annotation.start)
+            let end = flipY(annotation.end)
+            // Text baseline correction: in non-flipped context, text draws upward from point
+            if annotation.tool == .text {
+                let fontSize: CGFloat = 16
+                start.y -= fontSize * scaleY
+            }
             let scaled = Annotation(
                 tool: annotation.tool, color: annotation.color, filled: annotation.filled,
-                start: flipY(annotation.start),
-                end: flipY(annotation.end),
+                start: start,
+                end: end,
                 text: annotation.text
             )
             drawAnnotation(scaled)
