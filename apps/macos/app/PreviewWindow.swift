@@ -43,6 +43,7 @@ final class PreviewWindow: NSWindow {
         contentView = container
 
         updateToolSelection()
+        makeFirstResponder(annotationView)
     }
 
     private func makeToolbar() -> NSView {
@@ -181,7 +182,8 @@ final class PreviewWindow: NSWindow {
             close()
             return
         }
-        if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "c" {
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if flags == .command, event.charactersIgnoringModifiers == "c" {
             copyToClipboard()
             return
         }

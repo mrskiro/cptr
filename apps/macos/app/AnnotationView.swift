@@ -54,10 +54,14 @@ final class AnnotationView: NSView {
 
     private let image: NSImage
     private var annotations: [Annotation] = []
+    private var undoStack: [[Annotation]] = []
+    private var redoStack: [[Annotation]] = []
     private var activeAnnotation: Annotation?
     private var activeTextField: NSTextField?
+    private var activeTextColor: NSColor?
     private(set) var selectedIndex: Int?
     private var dragMode: DragMode?
+    private var dragSnapshotSaved = false
     private let handleSize: CGFloat = 8
 
     init(image: NSImage) {
@@ -180,6 +184,30 @@ final class AnnotationView: NSView {
         )
     }
 
+    // MARK: - Undo/Redo
+
+    private func saveSnapshot() {
+        undoStack.append(annotations)
+        if undoStack.count > 50 { undoStack.removeFirst() }
+        redoStack.removeAll()
+    }
+
+    func undo() {
+        guard let snapshot = undoStack.popLast() else { return }
+        redoStack.append(annotations)
+        annotations = snapshot
+        selectedIndex = nil
+        needsDisplay = true
+    }
+
+    func redo() {
+        guard let snapshot = redoStack.popLast() else { return }
+        undoStack.append(annotations)
+        annotations = snapshot
+        selectedIndex = nil
+        needsDisplay = true
+    }
+
     // MARK: - Mouse events
 
     override func mouseDown(with event: NSEvent) {
@@ -188,11 +216,13 @@ final class AnnotationView: NSView {
         // Check resize handles on selected annotation first
         if let i = selectedIndex, annotations[i].tool != .text {
             if handleHitTest(point, handle: annotations[i].start) {
+                dragSnapshotSaved = false
                 dragMode = .resizeStart
                 needsDisplay = true
                 return
             }
             if handleHitTest(point, handle: annotations[i].end) {
+                dragSnapshotSaved = false
                 dragMode = .resizeEnd
                 needsDisplay = true
                 return
@@ -202,6 +232,7 @@ final class AnnotationView: NSView {
         // Hit test existing annotations (reverse order = topmost first)
         for i in annotations.indices.reversed() {
             if annotations[i].hitTest(point) {
+                dragSnapshotSaved = false
                 selectedIndex = i
                 dragMode = .move(origin: point)
                 needsDisplay = true
@@ -224,6 +255,7 @@ final class AnnotationView: NSView {
             addSubview(textField)
             window?.makeFirstResponder(textField)
             activeTextField = textField
+            activeTextColor = currentColor
             return
         }
 
@@ -237,6 +269,10 @@ final class AnnotationView: NSView {
         let point = convert(event.locationInWindow, from: nil)
 
         if let i = selectedIndex, let mode = dragMode {
+            if !dragSnapshotSaved {
+                saveSnapshot()
+                dragSnapshotSaved = true
+            }
             switch mode {
             case .move(let origin):
                 let dx = point.x - origin.x
@@ -268,6 +304,7 @@ final class AnnotationView: NSView {
         }
         guard var annotation = activeAnnotation else { return }
         annotation.end = convert(event.locationInWindow, from: nil)
+        saveSnapshot()
         annotations.append(annotation)
         activeAnnotation = nil
         needsDisplay = true
@@ -283,17 +320,27 @@ final class AnnotationView: NSView {
             activeTextField = nil
             return
         }
+        saveSnapshot()
         annotations.append(Annotation(
-            tool: .text, color: currentColor, filled: false,
+            tool: .text, color: activeTextColor ?? currentColor, filled: false,
             start: textField.frame.origin, end: textField.frame.origin, text: textField.stringValue
         ))
         textField.removeFromSuperview()
         activeTextField = nil
+        activeTextColor = nil
         needsDisplay = true
     }
 
     override func keyDown(with event: NSEvent) {
-        // Delete or Backspace
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if flags == .command, event.charactersIgnoringModifiers == "z" {
+            undo()
+            return
+        }
+        if flags == [.command, .shift], event.charactersIgnoringModifiers?.lowercased() == "z" {
+            redo()
+            return
+        }
         if event.keyCode == 51 || event.keyCode == 117 {
             deleteSelected()
             return
@@ -303,6 +350,7 @@ final class AnnotationView: NSView {
 
     func deleteSelected() {
         guard let i = selectedIndex else { return }
+        saveSnapshot()
         annotations.remove(at: i)
         selectedIndex = nil
         needsDisplay = true
@@ -310,6 +358,7 @@ final class AnnotationView: NSView {
 
     func updateSelectedColor(_ color: NSColor) {
         guard let i = selectedIndex else { return }
+        saveSnapshot()
         annotations[i].color = color
         needsDisplay = true
     }
