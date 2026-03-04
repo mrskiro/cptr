@@ -35,4 +35,6 @@ jobs:
 
       - run: pnpm check-types
 
+      - run: pnpm exec playwright install chromium
+
       - run: pnpm -F @cptr/extension test
