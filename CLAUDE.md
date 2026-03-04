@@ -49,6 +49,13 @@ pnpm format:check              # oxfmt --check
 - Overlay click-to-close belongs on the JSX element's `onClick`, not in a global document click handler
 - SVG overlay cutout uses `fill-rule="evenodd"` (same technique as Driver.js/Shepherd.js)
 
+## macOS App (`apps/macos`)
+
+- Pure Swift + AppKit (no external dependencies). Xcode 16+, macOS 14+
+- Build: Cmd+R in Xcode, or `xcodebuild -project apps/macos/app.xcodeproj -scheme app build`
+- ScreenCaptureKit: sourceRect + width/height causes blurry output due to internal scaling. Capture full display, then crop via CGImage.cropping(to:)
+- After editing Swift files, verify build with `xcodebuild` before asking user to test
+
 ## oxfmt
 
 - v0.35.0 renamed settings: `experimentalSortImports` → `sortImports`, `experimentalSortPackageJson` → `sortPackageJson`
