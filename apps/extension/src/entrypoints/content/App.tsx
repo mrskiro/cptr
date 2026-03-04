@@ -2,7 +2,7 @@
 import { Copy, Download, RefreshCw } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
-import { playCaptureSound } from "./sound";
+import { playCaptureSound } from "../../sound";
 
 const buildOverlayPath = (
   rect: DOMRect | null,

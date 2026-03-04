@@ -1,1 +1,30 @@
 @import "tailwindcss";
+
+.hue-slider {
+  appearance: none;
+  background: linear-gradient(
+    to right,
+    #ffffff 0%,
+    #ffffff 4%,
+    hsl(0, 85%, 65%) 8%,
+    hsl(30, 85%, 65%) 16%,
+    hsl(60, 85%, 65%) 24%,
+    hsl(120, 75%, 55%) 40%,
+    hsl(180, 75%, 55%) 55%,
+    hsl(220, 80%, 65%) 70%,
+    hsl(270, 75%, 65%) 82%,
+    hsl(320, 75%, 65%) 92%,
+    hsl(360, 85%, 65%) 100%
+  );
+}
+
+.hue-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}

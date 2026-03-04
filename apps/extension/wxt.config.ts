@@ -3,15 +3,13 @@ import { defineConfig } from "wxt";
 
 export default defineConfig({
   srcDir: "src",
-  modules: ["@wxt-dev/module-react"],
   manifest: {
     name: "cptr",
-    permissions: ["activeTab", "clipboardWrite"],
+    permissions: ["activeTab", "clipboardWrite", "storage"],
     commands: {
       "toggle-capture": {
         suggested_key: {
-          default: "Ctrl+Shift+S",
-          mac: "Command+Shift+S",
+          default: "Alt+Shift+S",
         },
         description: "Toggle capture mode",
       },
