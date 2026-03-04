@@ -82,14 +82,16 @@ export const App = () => {
   }, []);
 
   useEffect(() => {
-    capturePromise.then((dataUrl) => {
-      const image = new Image();
-      image.onload = () => {
-        setImg(image);
-        playCaptureSound();
-      };
-      image.src = dataUrl;
-    }).catch((e) => console.error("capture failed:", e));
+    capturePromise
+      .then((dataUrl) => {
+        const image = new Image();
+        image.onload = () => {
+          setImg(image);
+          playCaptureSound();
+        };
+        image.src = dataUrl;
+      })
+      .catch((e) => console.error("capture failed:", e));
   }, []);
 
   const previewUrl = img ? renderPortrait(img, bg).toDataURL() : null;
@@ -121,11 +123,7 @@ export const App = () => {
     <div class="flex flex-col gap-3 p-4 w-80">
       <div class="rounded-lg overflow-hidden">
         {previewUrl ? (
-          <img
-            src={previewUrl}
-            alt="Screenshot preview"
-            class="block w-full"
-          />
+          <img src={previewUrl} alt="Screenshot preview" class="block w-full" />
         ) : (
           <div class="aspect-video bg-gray-200 animate-pulse" />
         )}
