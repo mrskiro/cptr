@@ -11,18 +11,19 @@ Hotkey-driven screenshot tool with annotation.
 ### Features
 
 - Menu bar app (no Dock icon)
-- Global hotkey (Cmd+Shift+2) to start capture
+- Global hotkey (Cmd+Shift+2 by default, customizable via Settings)
 - Drag to select region
 - Preview window with annotation tools
   - Arrow, rectangle, text
   - Color picker (red, black, white, blue)
   - Fill toggle for rectangles
   - Select, move, and recolor annotations
+- Undo / Redo (Cmd+Z / Cmd+Shift+Z)
 - Copy to clipboard (Cmd+C)
 
 ### Tech
 
-Swift, AppKit, ScreenCaptureKit, Carbon API
+Swift, AppKit, ScreenCaptureKit, [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts)
 
 ### Requirements
 
@@ -31,9 +32,6 @@ Swift, AppKit, ScreenCaptureKit, Carbon API
 
 ### Roadmap
 
-- [ ] Undo (Cmd+Z)
-- [ ] Customizable hotkey
-- [ ] Window / fullscreen capture
 - [ ] Code signing + notarization
 - [ ] Auto-update (Sparkle)
 

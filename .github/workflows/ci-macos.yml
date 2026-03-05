@@ -1,0 +1,23 @@
+name: CI macOS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/macos/**"
+      - ".github/workflows/ci-macos.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/macos/**"
+      - ".github/workflows/ci-macos.yml"
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: xcodebuild -project apps/macos/app.xcodeproj -scheme app -resolvePackageDependencies
+
+      - run: xcodebuild -project apps/macos/app.xcodeproj -scheme app build
