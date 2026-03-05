@@ -56,3 +56,11 @@ WXT, Preact, TypeScript, Tailwind CSS v4
 
 - Node.js 18+
 - pnpm
+
+### Roadmap
+
+- [ ] Annotation (arrow, rectangle, text — align with macOS app)
+- [ ] Right-click context menu ("Capture this element")
+- [ ] Chrome Web Store publication
+- [ ] Scroll capture (full-page screenshot)
+- [ ] Export format options (JPEG, WebP)
