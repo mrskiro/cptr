@@ -18,6 +18,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - run: xcodebuild -project apps/macos/app.xcodeproj -scheme app -resolvePackageDependencies
+      - uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          key: spm-${{ hashFiles('apps/macos/app.xcodeproj/project.pbxproj') }}
+          restore-keys: spm-
 
-      - run: xcodebuild -project apps/macos/app.xcodeproj -scheme app build CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO
+      - run: xcodebuild -project apps/macos/app.xcodeproj -scheme app build CODE_SIGNING_ALLOWED=NO
