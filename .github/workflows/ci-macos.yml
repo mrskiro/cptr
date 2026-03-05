@@ -20,4 +20,4 @@ jobs:
 
       - run: xcodebuild -project apps/macos/app.xcodeproj -scheme app -resolvePackageDependencies
 
-      - run: xcodebuild -project apps/macos/app.xcodeproj -scheme app build
+      - run: xcodebuild -project apps/macos/app.xcodeproj -scheme app build CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO
