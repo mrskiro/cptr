@@ -58,7 +58,7 @@ struct appApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
-        MenuBarExtra("cptr", systemImage: "camera.viewfinder") {
+        MenuBarExtra("cptr", image: "MenuBarIcon") {
             SettingsLink()
                 .keyboardShortcut(",")
             Divider()
