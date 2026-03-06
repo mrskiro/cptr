@@ -7,11 +7,12 @@
     "dev": "turbo run dev",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "lint": "oxlint --deny-warnings",
-    "lint:fix": "oxlint --fix --fix-suggestions --fix-dangerously && pnpm format",
-    "icons:generate": "pnpm icons:appicon && pnpm icons:menubar",
     "icons:appicon": "for s in 16 32 64 128 256 512 1024; do resvg logo.svg -w $s -h $s apps/macos/app/Assets.xcassets/AppIcon.appiconset/icon_$s.png; done",
-    "icons:menubar": "resvg logo-menubar.svg -w 22 -h 22 apps/macos/app/Assets.xcassets/MenuBarIcon.imageset/icon.png && resvg logo-menubar.svg -w 44 -h 44 apps/macos/app/Assets.xcassets/MenuBarIcon.imageset/icon@2x.png"
+    "icons:extension": "for s in 16 32 48 96 128; do resvg logo.svg -w $s -h $s apps/extension/public/icon/$s.png; done",
+    "icons:generate": "pnpm icons:appicon && pnpm icons:menubar && pnpm icons:extension",
+    "icons:menubar": "resvg logo-menubar.svg -w 22 -h 22 apps/macos/app/Assets.xcassets/MenuBarIcon.imageset/icon.png && resvg logo-menubar.svg -w 44 -h 44 apps/macos/app/Assets.xcassets/MenuBarIcon.imageset/icon@2x.png",
+    "lint": "oxlint --deny-warnings",
+    "lint:fix": "oxlint --fix --fix-suggestions --fix-dangerously && pnpm format"
   },
   "devDependencies": {
     "oxfmt": "0.35.0",
