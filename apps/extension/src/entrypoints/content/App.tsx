@@ -3,6 +3,7 @@ import { Copy, Download, Pencil, RefreshCw } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import { playCaptureSound } from "../../sound";
+
 import { AnnotationEditor } from "./AnnotationEditor";
 
 const buildOverlayPath = (

@@ -1,5 +1,14 @@
 /** @jsxImportSource preact */
-import { Copy, Download, MousePointer2, MoveRight, PaintBucket, Square, Type, X } from "lucide-preact";
+import {
+  Copy,
+  Download,
+  MousePointer2,
+  MoveRight,
+  PaintBucket,
+  Square,
+  Type,
+  X,
+} from "lucide-preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 // --- Data model ---
@@ -85,8 +94,14 @@ const drawArrow = (ctx: CanvasRenderingContext2D, start: Point, end: Point, colo
   const headAngle = Math.PI / 6;
   ctx.beginPath();
   ctx.moveTo(end.x, end.y);
-  ctx.lineTo(end.x - headLength * Math.cos(angle - headAngle), end.y - headLength * Math.sin(angle - headAngle));
-  ctx.lineTo(end.x - headLength * Math.cos(angle + headAngle), end.y - headLength * Math.sin(angle + headAngle));
+  ctx.lineTo(
+    end.x - headLength * Math.cos(angle - headAngle),
+    end.y - headLength * Math.sin(angle - headAngle),
+  );
+  ctx.lineTo(
+    end.x - headLength * Math.cos(angle + headAngle),
+    end.y - headLength * Math.sin(angle + headAngle),
+  );
   ctx.closePath();
   ctx.fillStyle = color;
   ctx.fill();
@@ -190,7 +205,9 @@ export const AnnotationEditor = ({
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const activeAnnotationRef = useRef<Annotation | null>(null);
-  const dragRef = useRef<{ type: "move"; origin: Point } | { type: "resizeStart" | "resizeEnd"; origin: Point } | null>(null);
+  const dragRef = useRef<
+    { type: "move"; origin: Point } | { type: "resizeStart" | "resizeEnd"; origin: Point } | null
+  >(null);
   const [editingText, setEditingText] = useState<{ pos: Point; value: string } | null>(null);
   const editingTextRef = useRef<{ pos: Point; value: string } | null>(null);
   editingTextRef.current = editingText;
@@ -215,46 +232,49 @@ export const AnnotationEditor = ({
     });
   }, [dataUrl]);
 
-  const redraw = useCallback((extraAnnotation?: Annotation | null, highlightIndex?: number | null) => {
-    const canvas = canvasRef.current;
-    const img = imageRef.current;
-    if (!canvas || !img) return;
+  const redraw = useCallback(
+    (extraAnnotation?: Annotation | null, highlightIndex?: number | null) => {
+      const canvas = canvasRef.current;
+      const img = imageRef.current;
+      if (!canvas || !img) return;
 
-    const dpr = window.devicePixelRatio;
-    canvas.width = displayW * dpr;
-    canvas.height = displayH * dpr;
-    const ctx = canvas.getContext("2d")!;
-    ctx.scale(dpr, dpr);
+      const dpr = window.devicePixelRatio;
+      canvas.width = displayW * dpr;
+      canvas.height = displayH * dpr;
+      const ctx = canvas.getContext("2d")!;
+      ctx.scale(dpr, dpr);
 
-    // Base image
-    ctx.drawImage(
-      img,
-      cropRect.left * dpr,
-      cropRect.top * dpr,
-      cropRect.width * dpr,
-      cropRect.height * dpr,
-      0,
-      0,
-      displayW,
-      displayH,
-    );
+      // Base image
+      ctx.drawImage(
+        img,
+        cropRect.left * dpr,
+        cropRect.top * dpr,
+        cropRect.width * dpr,
+        cropRect.height * dpr,
+        0,
+        0,
+        displayW,
+        displayH,
+      );
 
-    // Committed annotations
-    for (const a of annotations) {
-      drawAnnotation(ctx, a);
-    }
+      // Committed annotations
+      for (const a of annotations) {
+        drawAnnotation(ctx, a);
+      }
 
-    // Active (in-progress) annotation
-    if (extraAnnotation) {
-      drawAnnotation(ctx, extraAnnotation);
-    }
+      // Active (in-progress) annotation
+      if (extraAnnotation) {
+        drawAnnotation(ctx, extraAnnotation);
+      }
 
-    // Selection handles
-    const si = highlightIndex ?? selectedIndex;
-    if (si !== null && si !== undefined && annotations[si]) {
-      drawSelectionHandles(ctx, annotations[si]);
-    }
-  }, [annotations, cropRect, displayW, displayH, selectedIndex]);
+      // Selection handles
+      const si = highlightIndex ?? selectedIndex;
+      if (si !== null && si !== undefined && annotations[si]) {
+        drawSelectionHandles(ctx, annotations[si]);
+      }
+    },
+    [annotations, cropRect, displayW, displayH, selectedIndex],
+  );
 
   // Redraw when image loads or annotations/selection change
   useEffect(() => {
@@ -431,9 +451,7 @@ export const AnnotationEditor = ({
   const handleColorChange = (color: string) => {
     setActiveColor(color);
     if (selectedIndex !== null) {
-      setAnnotations((prev) =>
-        prev.map((a, i) => (i === selectedIndex ? { ...a, color } : a)),
-      );
+      setAnnotations((prev) => prev.map((a, i) => (i === selectedIndex ? { ...a, color } : a)));
     }
   };
 
@@ -537,7 +555,9 @@ export const AnnotationEditor = ({
                 caretColor: activeColor,
               }}
               value={editingText.value}
-              onInput={(e) => setEditingText({ ...editingText, value: (e.target as HTMLInputElement).value })}
+              onInput={(e) =>
+                setEditingText({ ...editingText, value: (e.target as HTMLInputElement).value })
+              }
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -576,31 +596,33 @@ export const AnnotationEditor = ({
             ))}
 
             {/* Fill toggle (rect tool or selected rect) */}
-            {(activeTool === "rect" || (selectedIndex !== null && annotations[selectedIndex]?.tool === "rect")) && (() => {
-              const selectedRect = selectedIndex !== null ? annotations[selectedIndex] : null;
-              const isFilled = selectedRect?.tool === "rect" ? selectedRect.filled : rectFilled;
-              const toggle = () => {
-                if (selectedRect?.tool === "rect") {
-                  setAnnotations((prev) =>
-                    prev.map((a, i) => (i === selectedIndex ? { ...a, filled: !a.filled } : a)),
-                  );
-                } else {
-                  setRectFilled((v) => !v);
-                }
-              };
-              return (
-                <>
-                  <div class="w-px h-4 bg-white/20" />
-                  <button
-                    type="button"
-                    class={`flex items-center justify-center w-7 h-7 rounded cursor-pointer border-none ${isFilled ? "bg-white/20 text-white" : "bg-transparent text-white/70 hover:text-white hover:bg-white/10"}`}
-                    onClick={toggle}
-                  >
-                    <PaintBucket size={14} />
-                  </button>
-                </>
-              );
-            })()}
+            {(activeTool === "rect" ||
+              (selectedIndex !== null && annotations[selectedIndex]?.tool === "rect")) &&
+              (() => {
+                const selectedRect = selectedIndex !== null ? annotations[selectedIndex] : null;
+                const isFilled = selectedRect?.tool === "rect" ? selectedRect.filled : rectFilled;
+                const toggle = () => {
+                  if (selectedRect?.tool === "rect") {
+                    setAnnotations((prev) =>
+                      prev.map((a, i) => (i === selectedIndex ? { ...a, filled: !a.filled } : a)),
+                    );
+                  } else {
+                    setRectFilled((v) => !v);
+                  }
+                };
+                return (
+                  <>
+                    <div class="w-px h-4 bg-white/20" />
+                    <button
+                      type="button"
+                      class={`flex items-center justify-center w-7 h-7 rounded cursor-pointer border-none ${isFilled ? "bg-white/20 text-white" : "bg-transparent text-white/70 hover:text-white hover:bg-white/10"}`}
+                      onClick={toggle}
+                    >
+                      <PaintBucket size={14} />
+                    </button>
+                  </>
+                );
+              })()}
 
             {/* Separator */}
             <div class="w-px h-4 bg-white/20" />
@@ -613,7 +635,12 @@ export const AnnotationEditor = ({
                 class="w-5 h-5 rounded-full cursor-pointer border-none p-0"
                 style={{
                   backgroundColor: color,
-                  boxShadow: activeColor === color ? `0 0 0 2px rgba(255,255,255,0.9), 0 0 0 4px ${color}` : color === "#FFFFFF" ? "inset 0 0 0 1px rgba(0,0,0,0.2)" : "none",
+                  boxShadow:
+                    activeColor === color
+                      ? `0 0 0 2px rgba(255,255,255,0.9), 0 0 0 4px ${color}`
+                      : color === "#FFFFFF"
+                        ? "inset 0 0 0 1px rgba(0,0,0,0.2)"
+                        : "none",
                 }}
                 onClick={() => handleColorChange(color)}
               />
