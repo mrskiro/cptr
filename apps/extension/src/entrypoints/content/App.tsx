@@ -1,8 +1,10 @@
 /** @jsxImportSource preact */
-import { Copy, Download, RefreshCw } from "lucide-preact";
+import { Copy, Download, Pencil, RefreshCw } from "lucide-preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import { playCaptureSound } from "../../sound";
+
+import { AnnotationEditor } from "./AnnotationEditor";
 
 const buildOverlayPath = (
   rect: DOMRect | null,
@@ -92,6 +94,7 @@ export const App = ({ onClose }: { onClose: () => void }) => {
   const [capturedDataUrl, setCapturedDataUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const currentTargetRef = useRef<Element | null>(null);
   const capturedOriginalRectRef = useRef<DOMRect | null>(null);
@@ -237,6 +240,16 @@ export const App = ({ onClose }: { onClose: () => void }) => {
     startListening();
   };
 
+  if (editing && capturedDataUrl && capturedOriginalRectRef.current) {
+    return (
+      <AnnotationEditor
+        dataUrl={capturedDataUrl}
+        cropRect={capturedOriginalRectRef.current}
+        onClose={() => setEditing(false)}
+      />
+    );
+  }
+
   return (
     <div class="fixed inset-0 z-[2147483646] pointer-events-none">
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions -- overlay backdrop, keyboard handled via document keydown */}
@@ -295,6 +308,7 @@ export const App = ({ onClose }: { onClose: () => void }) => {
             onClick={handleCopy}
           />
           <MenuButton icon={<Download size={16} />} label="Save" onClick={handleSave} />
+          <MenuButton icon={<Pencil size={16} />} label="Edit" onClick={() => setEditing(true)} />
           <MenuButton icon={<RefreshCw size={16} />} label="Retake" onClick={handleRetake} />
         </div>
       )}
