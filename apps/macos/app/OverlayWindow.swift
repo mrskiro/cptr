@@ -2,6 +2,7 @@ import AppKit
 
 final class OverlayWindow: NSWindow {
     var onSelection: ((CGRect, NSPoint) -> Void)?
+    var onCancel: (() -> Void)?
 
     init() {
         let mouseLocation = NSEvent.mouseLocation
@@ -16,22 +17,28 @@ final class OverlayWindow: NSWindow {
         hasShadow = false
         ignoresMouseEvents = false
         isReleasedWhenClosed = false
+        acceptsMouseMovedEvents = true
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
         let overlayView = OverlayView()
         overlayView.onSelection = { [weak self] rect, endpoint in
-            NSCursor.arrow.set()
             self?.onSelection?(rect, endpoint)
-            self?.close()
         }
         overlayView.onCancel = { [weak self] in
-            NSCursor.arrow.set()
-            self?.close()
+            self?.onCancel?()
         }
         contentView = overlayView
     }
 
     override var canBecomeKey: Bool { true }
+
+    override func close() {
+        if let view = contentView {
+            for area in view.trackingAreas { view.removeTrackingArea(area) }
+            view.discardCursorRects()
+        }
+        super.close()
+    }
 }
 
 final class OverlayView: NSView {
@@ -40,6 +47,7 @@ final class OverlayView: NSView {
 
     private var dragOrigin: NSPoint?
     private var currentRect: NSRect?
+    private var mousePosition: NSPoint?
 
     override var acceptsFirstResponder: Bool { true }
 
@@ -47,9 +55,26 @@ final class OverlayView: NSView {
         addCursorRect(bounds, cursor: .crosshair)
     }
 
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        for area in trackingAreas { removeTrackingArea(area) }
+        addTrackingArea(NSTrackingArea(
+            rect: bounds,
+            options: [.activeAlways, .mouseMoved, .inVisibleRect],
+            owner: self
+        ))
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        mousePosition = convert(event.locationInWindow, from: nil)
+        needsDisplay = true
+    }
+
     override func mouseDown(with event: NSEvent) {
         dragOrigin = convert(event.locationInWindow, from: nil)
         currentRect = nil
+        mousePosition = nil
+        needsDisplay = true
     }
 
     override func mouseDragged(with event: NSEvent) {
@@ -91,12 +116,28 @@ final class OverlayView: NSView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        guard let rect = currentRect else { return }
-        NSColor.black.withAlphaComponent(0.2).setFill()
-        NSBezierPath(rect: rect).fill()
-        NSColor.white.withAlphaComponent(0.8).setStroke()
-        let border = NSBezierPath(rect: rect)
-        border.lineWidth = 1
-        border.stroke()
+        if let pos = mousePosition {
+            NSColor.white.withAlphaComponent(0.6).setStroke()
+            let horizontal = NSBezierPath()
+            horizontal.move(to: NSPoint(x: 0, y: pos.y))
+            horizontal.line(to: NSPoint(x: bounds.width, y: pos.y))
+            horizontal.lineWidth = 1
+            horizontal.stroke()
+
+            let vertical = NSBezierPath()
+            vertical.move(to: NSPoint(x: pos.x, y: 0))
+            vertical.line(to: NSPoint(x: pos.x, y: bounds.height))
+            vertical.lineWidth = 1
+            vertical.stroke()
+        }
+
+        if let rect = currentRect {
+            NSColor.black.withAlphaComponent(0.2).setFill()
+            NSBezierPath(rect: rect).fill()
+            NSColor.white.withAlphaComponent(0.8).setStroke()
+            let border = NSBezierPath(rect: rect)
+            border.lineWidth = 1
+            border.stroke()
+        }
     }
 }
