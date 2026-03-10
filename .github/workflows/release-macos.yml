@@ -45,8 +45,6 @@ jobs:
           security list-keychain -d user -s "$KEYCHAIN_PATH"
 
       - name: Archive
-        env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           xcodebuild archive \
             -project apps/macos/app.xcodeproj \
@@ -56,14 +54,12 @@ jobs:
             OTHER_CODE_SIGN_FLAGS="--options=runtime" \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Developer ID Application" \
-            "DEVELOPMENT_TEAM=$APPLE_TEAM_ID" \
+            DEVELOPMENT_TEAM=UFVPP46RF3 \
             "MARKETING_VERSION=${{ inputs.version }}"
 
       - name: Export
-        env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          cat > "$RUNNER_TEMP/ExportOptions.plist" << EOF
+          cat > "$RUNNER_TEMP/ExportOptions.plist" << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -71,7 +67,7 @@ jobs:
             <key>method</key>
             <string>developer-id</string>
             <key>teamID</key>
-            <string>$APPLE_TEAM_ID</string>
+            <string>UFVPP46RF3</string>
             <key>signingStyle</key>
             <string>manual</string>
             <key>signingCertificate</key>
@@ -89,14 +85,13 @@ jobs:
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           ditto -c -k --keepParent "$RUNNER_TEMP/export/cptr.app" "$RUNNER_TEMP/cptr.zip"
 
           xcrun notarytool submit "$RUNNER_TEMP/cptr.zip" \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" \
+            --team-id UFVPP46RF3 \
             --wait
 
           xcrun stapler staple "$RUNNER_TEMP/export/cptr.app"
