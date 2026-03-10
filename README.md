@@ -32,8 +32,12 @@ Swift, AppKit, ScreenCaptureKit, [KeyboardShortcuts](https://github.com/sindreso
 
 ### Roadmap
 
-- [ ] Code signing + notarization
+- [x] Code signing + notarization
+- [x] GitHub Actions release workflow
+- [x] About menu + copyright
+- [x] Launch at Login
 - [ ] Auto-update (Sparkle)
+- [ ] Homebrew Cask
 
 ## Chrome Extension
 
