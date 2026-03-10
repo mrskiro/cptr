@@ -27,22 +27,16 @@ const DUMMY_DATA_URL = (() => {
  * the SVG overlay interception issue in tests.
  */
 const simulateCapture = async (container: HTMLElement) => {
-  fakeBrowser.runtime.onMessage.addListener(() =>
-    Promise.resolve({ dataUrl: DUMMY_DATA_URL }),
-  );
+  fakeBrowser.runtime.onMessage.addListener(() => Promise.resolve({ dataUrl: DUMMY_DATA_URL }));
 
   // Drag from (10,10) to (120,120) — creates a 110x110 canvas
-  document.dispatchEvent(
-    new MouseEvent("mousedown", { clientX: 10, clientY: 10, bubbles: true }),
-  );
+  document.dispatchEvent(new MouseEvent("mousedown", { clientX: 10, clientY: 10, bubbles: true }));
   // Wait for hold timer (200ms) to activate drag mode
   await new Promise((r) => setTimeout(r, 250));
   document.dispatchEvent(
     new MouseEvent("mousemove", { clientX: 120, clientY: 120, bubbles: true }),
   );
-  document.dispatchEvent(
-    new MouseEvent("mouseup", { clientX: 120, clientY: 120, bubbles: true }),
-  );
+  document.dispatchEvent(new MouseEvent("mouseup", { clientX: 120, clientY: 120, bubbles: true }));
 
   await vi.waitFor(() => {
     expect(container.querySelector("canvas")).not.toBeNull();
