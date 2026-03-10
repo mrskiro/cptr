@@ -275,9 +275,7 @@ export const App = ({ onClose }: { onClose: () => void }) => {
   const [editingText, setEditingText] = useState<{ pos: Point; value: string } | null>(null);
   const editingTextRef = useRef<{ pos: Point; value: string } | null>(null);
   editingTextRef.current = editingText;
-  const [rectFilled, setRectFilled] = useState(false);
   const rectFilledRef = useRef(false);
-  rectFilledRef.current = rectFilled;
 
   // Undo/Redo
   const undoStackRef = useRef<Annotation[][]>([]);
