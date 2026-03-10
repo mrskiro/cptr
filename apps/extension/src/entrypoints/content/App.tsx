@@ -13,8 +13,6 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { playCaptureSound } from "../../sound";
 
-// --- Annotation model ---
-
 type AnnotationTool = "select" | "arrow" | "text" | "rect";
 
 type Annotation = {
@@ -29,8 +27,6 @@ type Annotation = {
 type Point = { x: number; y: number };
 
 const COLORS = ["#FF3B30", "#000000", "#FFFFFF", "#007AFF"];
-
-// --- Hit test ---
 
 const distanceToLine = (a: Point, b: Point, p: Point) => {
   const dx = b.x - a.x;
@@ -80,8 +76,6 @@ const hitTest = (a: Annotation, point: Point, tolerance = 6): boolean => {
       return false;
   }
 };
-
-// --- Drawing ---
 
 const drawArrow = (ctx: CanvasRenderingContext2D, start: Point, end: Point, color: string) => {
   ctx.beginPath();
@@ -167,8 +161,6 @@ const drawSelectionHandles = (ctx: CanvasRenderingContext2D, a: Annotation) => {
   }
 };
 
-// --- Helpers ---
-
 const loadImage = (src: string) =>
   new Promise<HTMLImageElement>((resolve) => {
     const img = new Image();
@@ -180,8 +172,6 @@ const toCanvasPos = (e: MouseEvent, canvas: HTMLCanvasElement): Point => {
   const rect = canvas.getBoundingClientRect();
   return { x: e.clientX - rect.left, y: e.clientY - rect.top };
 };
-
-// --- Overlay helpers ---
 
 const buildOverlayPath = (
   rect: DOMRect | null,
@@ -219,8 +209,6 @@ const menuLeft = (anchor: DOMRect, viewportWidth: number, menuWidth = 160) =>
 const PAD = 6;
 const toPaddedRect = (r: DOMRect) =>
   new DOMRect(r.x - PAD, r.y - PAD, r.width + PAD * 2, r.height + PAD * 2);
-
-// --- Component ---
 
 const TOOLS: { tool: AnnotationTool; icon: preact.ComponentChild }[] = [
   { tool: "select", icon: <MousePointer2 size={14} /> },
@@ -411,8 +399,6 @@ export const App = ({ onClose }: { onClose: () => void }) => {
     });
   }, [capturedDataUrl]);
 
-  // --- Canvas drawing ---
-
   const redraw = useCallback(
     (extraAnnotation?: Annotation | null, highlightIdx?: number | null) => {
       const canvas = canvasRef.current;
@@ -454,8 +440,6 @@ export const App = ({ onClose }: { onClose: () => void }) => {
   useEffect(() => {
     if (imageReady) redraw();
   }, [imageReady, annotations, selectedIndex, redraw]);
-
-  // --- Canvas mouse handlers ---
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -566,8 +550,6 @@ export const App = ({ onClose }: { onClose: () => void }) => {
     return () => controller.abort();
   }, [imageReady, annotations, selectedIndex, redraw]);
 
-  // --- Text editing ---
-
   const commitText = () => {
     if (!editingText) return;
     if (editingText.value.trim()) {
@@ -588,8 +570,6 @@ export const App = ({ onClose }: { onClose: () => void }) => {
     }
     setEditingText(null);
   };
-
-  // --- Keyboard ---
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -615,8 +595,6 @@ export const App = ({ onClose }: { onClose: () => void }) => {
     return () => document.removeEventListener("keydown", handler, { capture: true });
   }, [onClose, selectedIndex, editingText]);
 
-  // --- Color change ---
-
   const handleColorChange = (color: string) => {
     setActiveColor(color);
     if (selectedIndex !== null) {
@@ -624,8 +602,6 @@ export const App = ({ onClose }: { onClose: () => void }) => {
       setAnnotations((prev) => prev.map((a, i) => (i === selectedIndex ? { ...a, color } : a)));
     }
   };
-
-  // --- Export ---
 
   const exportBlob = async () => {
     const img = imageRef.current;
@@ -729,8 +705,6 @@ export const App = ({ onClose }: { onClose: () => void }) => {
     startListening();
   };
 
-  // --- Selected annotation bounding box (for contextual color picker) ---
-
   const selectedAnnotation = selectedIndex !== null ? annotations[selectedIndex] : null;
   const selectionBounds = (() => {
     if (!selectedAnnotation) return null;
@@ -745,8 +719,6 @@ export const App = ({ onClose }: { onClose: () => void }) => {
     const minY = Math.min(selectedAnnotation.start.y, selectedAnnotation.end.y);
     return { top: minY, centerX: (minX + maxX) / 2 };
   })();
-
-  // --- Fill toggle (for selected rect annotation) ---
 
   const toggleFill = () => {
     if (selectedAnnotation?.tool === "rect" && selectedIndex !== null) {
