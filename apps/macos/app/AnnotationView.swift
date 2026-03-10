@@ -9,7 +9,7 @@ enum AnnotationTool {
 struct Annotation {
     let tool: AnnotationTool
     var color: NSColor
-    let filled: Bool
+    var filled: Bool
     var start: NSPoint
     var end: NSPoint
     var text: String?
@@ -360,6 +360,13 @@ final class AnnotationView: NSView {
         guard let i = selectedIndex else { return }
         saveSnapshot()
         annotations[i].color = color
+        needsDisplay = true
+    }
+
+    func updateSelectedFilled(_ filled: Bool) {
+        guard let i = selectedIndex, annotations[i].tool == .rect else { return }
+        saveSnapshot()
+        annotations[i].filled = filled
         needsDisplay = true
     }
 
