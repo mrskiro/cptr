@@ -34,10 +34,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showOverlay() {
         previewWindow?.close()
         previewWindow = nil
+        overlayWindow?.onSelection = nil
+        overlayWindow?.onCancel = nil
         overlayWindow?.close()
         overlayWindow = nil
         let window = OverlayWindow()
         window.onSelection = { [weak self] rect, endpoint in
+            self?.overlayWindow?.close()
+            self?.overlayWindow = nil
             Task { @MainActor in
                 do {
                     let image = try await CaptureService.capture(rect: rect)
@@ -47,9 +51,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+        window.onCancel = { [weak self] in
+            self?.overlayWindow?.close()
+            self?.overlayWindow = nil
+        }
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         overlayWindow = window
+        DispatchQueue.main.async {
+            if let view = window.contentView {
+                window.invalidateCursorRects(for: view)
+            }
+        }
     }
 }
 
@@ -59,6 +72,9 @@ struct appApp: App {
 
     var body: some Scene {
         MenuBarExtra("cptr", image: "MenuBarIcon") {
+            Button("About cptr") {
+                NSApplication.shared.orderFrontStandardAboutPanel()
+            }
             SettingsLink()
                 .keyboardShortcut(",")
             Divider()
