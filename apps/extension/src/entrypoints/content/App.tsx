@@ -279,6 +279,31 @@ export const App = ({ onClose }: { onClose: () => void }) => {
   const rectFilledRef = useRef(false);
   rectFilledRef.current = rectFilled;
 
+  // Undo/Redo
+  const undoStackRef = useRef<Annotation[][]>([]);
+  const redoStackRef = useRef<Annotation[][]>([]);
+  const annotationsRef = useRef<Annotation[]>([]);
+  annotationsRef.current = annotations;
+
+  const pushUndo = () => {
+    undoStackRef.current.push([...annotationsRef.current]);
+    redoStackRef.current = [];
+  };
+
+  const undo = () => {
+    if (undoStackRef.current.length === 0) return;
+    redoStackRef.current.push([...annotationsRef.current]);
+    setAnnotations(undoStackRef.current.pop()!);
+    setSelectedIndex(null);
+  };
+
+  const redo = () => {
+    if (redoStackRef.current.length === 0) return;
+    undoStackRef.current.push([...annotationsRef.current]);
+    setAnnotations(redoStackRef.current.pop()!);
+    setSelectedIndex(null);
+  };
+
   useEffect(() => {
     document.documentElement.style.cursor = "crosshair";
     return () => {
@@ -450,10 +475,12 @@ export const App = ({ onClose }: { onClose: () => void }) => {
         if (selectedIndex !== null && annotations[selectedIndex]) {
           const sel = annotations[selectedIndex];
           if (Math.hypot(pos.x - sel.start.x, pos.y - sel.start.y) < 8) {
+            pushUndo();
             dragRef.current = { type: "resizeStart", origin: pos };
             return;
           }
           if (Math.hypot(pos.x - sel.end.x, pos.y - sel.end.y) < 8) {
+            pushUndo();
             dragRef.current = { type: "resizeEnd", origin: pos };
             return;
           }
@@ -461,6 +488,7 @@ export const App = ({ onClose }: { onClose: () => void }) => {
         for (let i = annotations.length - 1; i >= 0; i--) {
           if (hitTest(annotations[i], pos)) {
             setSelectedIndex(i);
+            pushUndo();
             dragRef.current = { type: "move", origin: pos };
             return;
           }
@@ -525,6 +553,7 @@ export const App = ({ onClose }: { onClose: () => void }) => {
       if (!active) return;
       activeAnnotationRef.current = null;
       if (Math.hypot(active.end.x - active.start.x, active.end.y - active.start.y) > 3) {
+        pushUndo();
         setAnnotations((prev) => [...prev, active]);
         setActiveTool("select");
         setSelectedIndex(annotations.length);
@@ -544,6 +573,7 @@ export const App = ({ onClose }: { onClose: () => void }) => {
   const commitText = () => {
     if (!editingText) return;
     if (editingText.value.trim()) {
+      pushUndo();
       setAnnotations((prev) => [
         ...prev,
         {
@@ -566,8 +596,19 @@ export const App = ({ onClose }: { onClose: () => void }) => {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (editingText) return;
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && e.shiftKey) {
+        e.preventDefault();
+        redo();
+        return;
+      }
       if (e.key === "Escape") onClose();
       if ((e.key === "Backspace" || e.key === "Delete") && selectedIndex !== null) {
+        pushUndo();
         setAnnotations((prev) => prev.filter((_, i) => i !== selectedIndex));
         setSelectedIndex(null);
       }
@@ -581,6 +622,7 @@ export const App = ({ onClose }: { onClose: () => void }) => {
   const handleColorChange = (color: string) => {
     setActiveColor(color);
     if (selectedIndex !== null) {
+      pushUndo();
       setAnnotations((prev) => prev.map((a, i) => (i === selectedIndex ? { ...a, color } : a)));
     }
   };
@@ -679,6 +721,8 @@ export const App = ({ onClose }: { onClose: () => void }) => {
     currentTargetRef.current = null;
     setAnnotations([]);
     setSelectedIndex(null);
+    undoStackRef.current = [];
+    redoStackRef.current = [];
     setActiveTool("arrow");
     setEditingText(null);
     imageRef.current = null;
@@ -708,6 +752,7 @@ export const App = ({ onClose }: { onClose: () => void }) => {
 
   const toggleFill = () => {
     if (selectedAnnotation?.tool === "rect" && selectedIndex !== null) {
+      pushUndo();
       setAnnotations((prev) =>
         prev.map((a, i) => (i === selectedIndex ? { ...a, filled: !a.filled } : a)),
       );

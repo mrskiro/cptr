@@ -160,7 +160,9 @@ final class PreviewWindow: NSWindow {
     }
 
     @objc private func toggleFill(_ sender: NSButton) {
-        annotationView.rectFilled = sender.state == .on
+        let filled = sender.state == .on
+        annotationView.rectFilled = filled
+        annotationView.updateSelectedFilled(filled)
     }
 
     private static let colors: [NSColor] = [.systemRed, .black, .white, .systemBlue]

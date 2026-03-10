@@ -261,6 +261,85 @@ describe("Annotation — Text tool", () => {
   });
 });
 
+describe("Undo/Redo", () => {
+  afterEach(() => {
+    document.documentElement.style.cursor = "";
+    fakeBrowser.reset();
+  });
+
+  it("undoes adding an annotation", async () => {
+    const { container } = render(<App onClose={vi.fn()} />);
+    const canvas = await simulateCapture(container);
+
+    await clickTool(container, "arrow");
+    dragCanvas(canvas, { x: 20, y: 20 }, { x: 80, y: 80 });
+
+    // Wait for select mode (annotation added)
+    await vi.waitFor(() => {
+      expect(canvas.className).toContain("cursor-default");
+    });
+
+    // Undo — annotation should be removed
+    await userEvent.keyboard("{Meta>}{z}{/Meta}");
+
+    // Verify: arrow tool works again (no existing annotation to select)
+    await clickTool(container, "arrow");
+    dragCanvas(canvas, { x: 20, y: 20 }, { x: 80, y: 80 });
+    await vi.waitFor(() => {
+      expect(canvas.className).toContain("cursor-default");
+    });
+  });
+
+  it("redoes after undo", async () => {
+    const { container } = render(<App onClose={vi.fn()} />);
+    const canvas = await simulateCapture(container);
+
+    await addTextAnnotation(container, canvas, 50, 50, "RedoMe");
+
+    // Undo
+    await userEvent.keyboard("{Meta>}{z}{/Meta}");
+
+    // Redo
+    await userEvent.keyboard("{Meta>}{Shift>}{z}{/Shift}{/Meta}");
+
+    // Text annotation should be back — click it to select, then delete
+    await clickTool(container, "select");
+    clickCanvas(canvas, 60, 60);
+    await userEvent.keyboard("{Delete}");
+
+    // Verify deleted: can place new text at same spot
+    await clickTool(container, "text");
+    clickCanvas(canvas, 50, 50);
+    await vi.waitFor(() => {
+      expect(container.querySelector("input[type='text']")).not.toBeNull();
+    });
+  });
+
+  it("undoes deletion", async () => {
+    const { container } = render(<App onClose={vi.fn()} />);
+    const canvas = await simulateCapture(container);
+
+    await addTextAnnotation(container, canvas, 50, 50, "BringBack");
+
+    // Delete
+    await userEvent.keyboard("{Delete}");
+
+    // Undo — annotation should be restored
+    await userEvent.keyboard("{Meta>}{z}{/Meta}");
+
+    // Verify restored: click to select, then delete succeeds
+    await clickTool(container, "select");
+    clickCanvas(canvas, 60, 60);
+    await userEvent.keyboard("{Delete}");
+
+    await clickTool(container, "text");
+    clickCanvas(canvas, 50, 50);
+    await vi.waitFor(() => {
+      expect(container.querySelector("input[type='text']")).not.toBeNull();
+    });
+  });
+});
+
 describe("Annotation — Arrow tool", () => {
   afterEach(() => {
     document.documentElement.style.cursor = "";
@@ -271,12 +350,59 @@ describe("Annotation — Arrow tool", () => {
     const { container } = render(<App onClose={vi.fn()} />);
     const canvas = await simulateCapture(container);
 
-    await clickTool(container, "arrow"); // arrow tool
+    await clickTool(container, "arrow");
     dragCanvas(canvas, { x: 50, y: 50 }, { x: 150, y: 150 });
 
     await vi.waitFor(() => {
       expect(canvas.className).toContain("cursor-default");
     });
+  });
+
+  it("selects arrow annotation by clicking on it", async () => {
+    const { container } = render(<App onClose={vi.fn()} />);
+    const canvas = await simulateCapture(container);
+
+    await clickTool(container, "arrow");
+    dragCanvas(canvas, { x: 20, y: 20 }, { x: 80, y: 80 });
+    await vi.waitFor(() => {
+      expect(canvas.className).toContain("cursor-default");
+    });
+
+    // Deselect
+    clickCanvas(canvas, 5, 5);
+
+    // Click on the arrow line (midpoint ~50,50)
+    clickCanvas(canvas, 50, 50);
+
+    // Verify selected by deleting
+    await userEvent.keyboard("{Delete}");
+
+    // Arrow is gone — can draw new one through same area
+    await clickTool(container, "arrow");
+    dragCanvas(canvas, { x: 20, y: 20 }, { x: 80, y: 80 });
+    await vi.waitFor(() => {
+      expect(canvas.className).toContain("cursor-default");
+    });
+  });
+
+  it("deletes selected arrow annotation with Delete key", async () => {
+    const { container } = render(<App onClose={vi.fn()} />);
+    const canvas = await simulateCapture(container);
+
+    await clickTool(container, "arrow");
+    dragCanvas(canvas, { x: 20, y: 20 }, { x: 80, y: 80 });
+    await vi.waitFor(() => {
+      expect(canvas.className).toContain("cursor-default");
+    });
+
+    // Already selected after adding — delete it
+    await userEvent.keyboard("{Delete}");
+
+    // Click where arrow was — nothing to select
+    clickCanvas(canvas, 50, 50);
+
+    // Delete again should be no-op (no selection)
+    await userEvent.keyboard("{Delete}");
   });
 });
 
@@ -290,11 +416,89 @@ describe("Annotation — Rect tool", () => {
     const { container } = render(<App onClose={vi.fn()} />);
     const canvas = await simulateCapture(container);
 
-    await clickTool(container, "rect"); // rect tool
-    dragCanvas(canvas, { x: 30, y: 30 }, { x: 130, y: 130 });
+    await clickTool(container, "rect");
+    dragCanvas(canvas, { x: 30, y: 30 }, { x: 90, y: 90 });
 
     await vi.waitFor(() => {
       expect(canvas.className).toContain("cursor-default");
     });
+  });
+
+  it("selects rect annotation by clicking on its edge", async () => {
+    const { container } = render(<App onClose={vi.fn()} />);
+    const canvas = await simulateCapture(container);
+
+    await clickTool(container, "rect");
+    dragCanvas(canvas, { x: 20, y: 20 }, { x: 80, y: 80 });
+    await vi.waitFor(() => {
+      expect(canvas.className).toContain("cursor-default");
+    });
+
+    // Deselect
+    clickCanvas(canvas, 5, 5);
+
+    // Click on rect edge (top edge, midpoint)
+    clickCanvas(canvas, 50, 20);
+
+    // Verify selected by deleting
+    await userEvent.keyboard("{Delete}");
+
+    await clickTool(container, "rect");
+    dragCanvas(canvas, { x: 20, y: 20 }, { x: 80, y: 80 });
+    await vi.waitFor(() => {
+      expect(canvas.className).toContain("cursor-default");
+    });
+  });
+
+  it("deletes selected rect annotation with Delete key", async () => {
+    const { container } = render(<App onClose={vi.fn()} />);
+    const canvas = await simulateCapture(container);
+
+    await clickTool(container, "rect");
+    dragCanvas(canvas, { x: 20, y: 20 }, { x: 80, y: 80 });
+    await vi.waitFor(() => {
+      expect(canvas.className).toContain("cursor-default");
+    });
+
+    // Already selected — delete
+    await userEvent.keyboard("{Delete}");
+
+    clickCanvas(canvas, 50, 20);
+    await userEvent.keyboard("{Delete}");
+  });
+
+  it("toggles fill on selected rect via popover button", async () => {
+    const { container } = render(<App onClose={vi.fn()} />);
+    const canvas = await simulateCapture(container);
+
+    // Draw rect lower so the popover (above selection) stays in viewport
+    await clickTool(container, "rect");
+    dragCanvas(canvas, { x: 20, y: 60 }, { x: 80, y: 100 });
+    await vi.waitFor(() => {
+      expect(canvas.className).toContain("cursor-default");
+    });
+
+    // Rect is selected — find the fill toggle (PaintBucket) in the contextual popover
+    // The contextual popover is the second backdrop-blur element (toolbar is the first)
+    await vi.waitFor(() => {
+      const popovers = container.querySelectorAll("[class*='backdrop-blur']");
+      expect(popovers.length).toBeGreaterThanOrEqual(2);
+    });
+    const popovers = container.querySelectorAll("[class*='backdrop-blur']");
+    const contextPopover = popovers[popovers.length - 1];
+    const buttons = contextPopover.querySelectorAll("button");
+    // Last button is the fill toggle (after 4 color buttons)
+    const fillButton = buttons[buttons.length - 1];
+
+    expect(fillButton).not.toBeNull();
+    fillButton.click();
+
+    // After fill toggle, clicking inside the rect (center) should select it
+    // (filled rects are hit-testable anywhere inside, unfilled only on edges)
+    clickCanvas(canvas, 5, 5); // deselect
+    clickCanvas(canvas, 50, 80); // click center of rect
+
+    // Verify selected by deleting
+    await userEvent.keyboard("{Delete}");
   });
 });
