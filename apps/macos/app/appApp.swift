@@ -72,6 +72,9 @@ struct appApp: App {
 
     var body: some Scene {
         MenuBarExtra("cptr", image: "MenuBarIcon") {
+            Button("About cptr") {
+                NSApplication.shared.orderFrontStandardAboutPanel()
+            }
             SettingsLink()
                 .keyboardShortcut(",")
             Divider()
