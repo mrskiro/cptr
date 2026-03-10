@@ -15,9 +15,15 @@
     "lint:fix": "oxlint --fix --fix-suggestions --fix-dangerously && pnpm format"
   },
   "devDependencies": {
+    "lefthook": "2.1.3",
     "oxfmt": "0.35.0",
     "oxlint": "1.50.0",
     "turbo": "^2.8.11"
   },
-  "packageManager": "pnpm@10.30.2"
+  "packageManager": "pnpm@10.30.2",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "lefthook"
+    ]
+  }
 }
