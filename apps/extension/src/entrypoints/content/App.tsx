@@ -732,14 +732,14 @@ const CanvasRenderer = ({
         </svg>
       </div>
 
-      <div class="absolute bottom-2 left-2 flex items-center gap-1 rounded-lg bg-gray-900/80 px-1.5 py-1 backdrop-blur-sm pointer-events-auto font-sans">
+      <div class="absolute bottom-2 left-2 flex items-center gap-1 rounded-lg bg-white shadow-lg px-1.5 py-1 pointer-events-auto font-sans">
         {ANNOTATION_TOOLS.map(({ mode, icon }) => (
           <button
             key={mode}
             type="button"
             aria-label={mode}
             aria-pressed={selectedMode === mode}
-            class={`flex items-center justify-center w-7 h-7 rounded cursor-pointer border-none ${selectedMode === mode ? "bg-white/90 text-gray-900" : "bg-transparent text-white/70 hover:text-white hover:bg-white/10"}`}
+            class={`flex items-center justify-center w-7 h-7 rounded cursor-pointer border-none ${selectedMode === mode ? "bg-gray-200 text-gray-900" : "bg-transparent text-gray-900 hover:bg-gray-100"}`}
             onClick={() => setSelectedMode(mode)}
           >
             {icon}
@@ -900,7 +900,7 @@ const AnnotationMenu = ({
 
   return (
     <div
-      class="absolute -translate-x-1/2 flex items-center gap-1.5 rounded-lg bg-gray-900/80 px-2 py-1.5 backdrop-blur-sm pointer-events-auto font-sans"
+      class="absolute -translate-x-1/2 flex items-center gap-1.5 rounded-lg bg-white shadow-xl px-2 py-1.5 pointer-events-auto font-sans"
       // oxlint-disable-next-line react/forbid-dom-props
       style={{
         top: `${top - 40}px`,
@@ -921,7 +921,7 @@ const AnnotationMenu = ({
               annotation.color === color
                 ? `0 0 0 2px rgba(255,255,255,0.9), 0 0 0 4px ${color === "#FFFFFF" ? "#999" : color}`
                 : color === "#FFFFFF"
-                  ? "inset 0 0 0 1px rgba(255,255,255,0.4)"
+                  ? "inset 0 0 0 1px rgba(0,0,0,0.2)"
                   : "none",
           }}
           onClick={() => onChangeColor(color)}
@@ -929,12 +929,12 @@ const AnnotationMenu = ({
       ))}
       {annotation.kind === "rect" && (
         <>
-          <div class="w-px h-4 bg-white/20" />
+          <div class="w-px h-4 bg-gray-200" />
           <button
             type="button"
             aria-label="Toggle fill"
             aria-pressed={annotation.filled}
-            class={`flex items-center justify-center w-6 h-6 rounded cursor-pointer border-none ${annotation.filled ? "bg-white/20 text-white" : "bg-transparent text-white/70 hover:text-white hover:bg-white/10"}`}
+            class={`flex items-center justify-center w-6 h-6 rounded cursor-pointer border-none ${annotation.filled ? "bg-gray-200 text-gray-900" : "bg-transparent text-gray-900 hover:bg-gray-100"}`}
             onClick={onToggleFill}
           >
             <PaintBucket size={12} />
