@@ -305,7 +305,12 @@ const CaptureEventListener = ({
         if (dragStart) return;
         const target = document
           .elementsFromPoint(e.clientX, e.clientY)
-          .find((el) => el.localName !== "cptr-overlay");
+          .find(
+            (el) =>
+              el.localName !== "cptr-overlay" &&
+              el !== document.documentElement &&
+              el !== document.body,
+          );
         if (!target || target === currentTargetRef.current) return;
         currentTargetRef.current = target;
         onMousemoveRect(toPaddedRect(target.getBoundingClientRect()));
