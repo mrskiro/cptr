@@ -3,7 +3,7 @@ import {
   Copy,
   Download,
   MousePointer2,
-  MoveRight,
+  MoveUpRight,
   PaintBucket,
   RefreshCw,
   Square,
@@ -375,7 +375,7 @@ type Annotation =
 
 const ANNOTATION_TOOLS: { mode: AnnotationMode; icon: preact.ComponentChild }[] = [
   { mode: "select", icon: <MousePointer2 size={14} /> },
-  { mode: "arrow", icon: <MoveRight size={14} /> },
+  { mode: "arrow", icon: <MoveUpRight size={14} /> },
   { mode: "text", icon: <Type size={14} /> },
   { mode: "rect", icon: <Square size={14} /> },
 ];
