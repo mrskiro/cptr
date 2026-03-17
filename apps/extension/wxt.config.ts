@@ -6,6 +6,7 @@ export default defineConfig({
   manifest: {
     name: "cptr",
     permissions: ["activeTab", "clipboardWrite", "storage"],
+    ...(process.env.E2E && { host_permissions: ["<all_urls>"] }),
     commands: {
       "toggle-capture": {
         suggested_key: {
