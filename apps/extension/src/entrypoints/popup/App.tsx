@@ -1,5 +1,6 @@
 /** @jsxImportSource preact */
 import { Copy, Download, Share } from "lucide-preact";
+// oxlint-disable-next-line no-restricted-imports -- useEffect syncs with browser.storage and browser.tabs API
 import { useEffect, useState } from "preact/hooks";
 
 import { playCaptureSound } from "../../sound";
@@ -75,12 +76,14 @@ export const App = () => {
   const bg = sliderValue === 0 ? "#ffffff" : `hsl(${sliderValue}, 70%, 75%)`;
   const [copied, setCopied] = useState(false);
 
+  // oxlint-disable-next-line custom-rules/no-use-effect -- sync initial value from browser.storage
   useEffect(() => {
     browser.storage.local.get(STORAGE_KEY).then((r) => {
       if (r[STORAGE_KEY] != null) setSliderValue(Number(r[STORAGE_KEY]));
     });
   }, []);
 
+  // oxlint-disable-next-line custom-rules/no-use-effect -- load captured image on mount
   useEffect(() => {
     capturePromise
       .then((dataUrl) => {
