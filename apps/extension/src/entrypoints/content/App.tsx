@@ -79,7 +79,7 @@ export const App = ({ onClose }: { onClose: () => void }) => {
 
   const [loadedImage, setLoadedImage] = useState<HTMLImageElement | null>(null);
 
-  // oxlint-disable-next-line custom-rules/no-use-effect -- document keydown listener for Escape
+  // oxlint-disable-next-line @mrskiro/oxlint-rules/no-use-effect -- document keydown listener for Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -88,7 +88,7 @@ export const App = ({ onClose }: { onClose: () => void }) => {
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  // oxlint-disable-next-line custom-rules/no-use-ref -- DOM reference for SVG export
+  // oxlint-disable-next-line @mrskiro/oxlint-rules/no-use-ref -- DOM reference for SVG export
   const svgRef = useRef<SVGSVGElement>(null);
 
   const exportBlob = async () => {
@@ -257,7 +257,7 @@ export const App = ({ onClose }: { onClose: () => void }) => {
 };
 
 const CursorManager = () => {
-  // oxlint-disable-next-line custom-rules/no-use-effect -- sync cursor style with component lifecycle
+  // oxlint-disable-next-line @mrskiro/oxlint-rules/no-use-effect -- sync cursor style with component lifecycle
   useEffect(() => {
     document.documentElement.style.cursor = "crosshair";
     return () => {
@@ -277,10 +277,10 @@ const CaptureEventListener = ({
   onMousemoveRect: (rect: DOMRect) => void;
   onDrag: (dragging: boolean) => void;
 }) => {
-  // oxlint-disable-next-line custom-rules/no-use-ref -- DOM reference for mousemove deduplication
+  // oxlint-disable-next-line @mrskiro/oxlint-rules/no-use-ref -- DOM reference for mousemove deduplication
   const currentTargetRef = useRef<Element | null>(null);
 
-  // oxlint-disable-next-line custom-rules/no-use-effect -- document event listeners for capture area selection
+  // oxlint-disable-next-line @mrskiro/oxlint-rules/no-use-effect -- document event listeners for capture area selection
   useEffect(() => {
     const abortController = new AbortController();
     let dragging = false;
@@ -443,7 +443,7 @@ const CanvasRenderer = ({
   image: HTMLImageElement;
   svgRef: preact.RefObject<SVGSVGElement>;
 }) => {
-  // oxlint-disable-next-line custom-rules/no-use-ref -- DOM reference for focus management and pointer capture
+  // oxlint-disable-next-line @mrskiro/oxlint-rules/no-use-ref -- DOM reference for focus management and pointer capture
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedMode, setSelectedMode] = useState<AnnotationMode>("arrow");
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
@@ -487,7 +487,7 @@ const CanvasRenderer = ({
     }
   };
 
-  // oxlint-disable-next-line custom-rules/no-use-effect -- document-level mousemove/mouseup for drag operations
+  // oxlint-disable-next-line @mrskiro/oxlint-rules/no-use-effect -- document-level mousemove/mouseup for drag operations
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const container = containerRef.current;
