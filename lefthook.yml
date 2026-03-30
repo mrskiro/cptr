@@ -7,3 +7,12 @@ pre-commit:
     - name: lint
       glob: "*.{ts,tsx,js,jsx}"
       run: pnpm oxlint --deny-warnings {staged_files}
+    - name: pinact
+      glob: ".github/{workflows,actions}/**/*.{yml,yaml}"
+      run: pinact run -u --check --min-age 7
+    - name: ghalint
+      glob: ".github/{workflows,actions}/**/*.{yml,yaml}"
+      run: ghalint run
+    - name: actionlint
+      glob: ".github/{workflows,actions}/**/*.{yml,yaml}"
+      run: actionlint
