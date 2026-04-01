@@ -21,11 +21,16 @@ xcodebuild -project apps/macos/app.xcodeproj -scheme app build  # macOS app
 - Non-entrypoint files must NOT be in `entrypoints/` — WXT treats all files there as entry points and requires a default export
 - WxtVitest plugin (`WxtVitest()`) is incompatible with browser mode — use `wxt/testing/fake-browser` directly
 - `/** @jsxImportSource preact */` pragma must stay on line 1 — oxfmt import sorting can reorder it below imports, breaking JSX types
+- `@wxt-dev/auto-icons` defaults to `icon.png` — for SVG, set `autoIcons.baseIconPath: "assets/icon.svg"` in wxt.config.ts
 
 ## Content Script Design
 
 - Mount/unmount via `ui.mount()` / `ui.remove()` controls component lifecycle — do not use internal state to toggle visibility
 - Overlay click-to-close belongs on the JSX element's `onClick`, not in a global document click handler
+
+## CI
+
+- CI で Playwright をインストールする際は `pnpm -F <pkg> exec playwright install` を使う。`pnpx` は最新版を取得するためプロジェクトのピン留めバージョンとズレる
 
 ## macOS App
 
