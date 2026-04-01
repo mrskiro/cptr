@@ -2,6 +2,10 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "wxt";
 
 export default defineConfig({
+  modules: ["@wxt-dev/auto-icons"],
+  autoIcons: {
+    baseIconPath: "assets/icon.svg",
+  },
   srcDir: "src",
   manifest: {
     name: "cptr",
